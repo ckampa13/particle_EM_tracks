@@ -1,3 +1,4 @@
+import time
 import math
 import numpy as np
 import pandas as pd
@@ -20,8 +21,14 @@ class trajectory_solver(object):
         B_func should take in 3D numpy array of position, but defaults to a 1 Tesla field in the z direction.
         '''
         self.init_conds = init_conds
+        if particle_id < 0:
+            sign = -1
+        else:
+            sign = +1
+        particle_id = abs(particle_id)
         self.particle = pypdt.get(particle_id)
         self.particle.mass_kg = self.particle.mass * one_gev_c2_to_kg
+        self.particle.charge_true = self.particle.charge*sign
         self.B_func = B_func
         self.E_func = E_func
 
@@ -46,7 +53,7 @@ class trajectory_solver(object):
         Calculate Lorentz acceleration
         '''
         # a = kg m /s
-        a = self.particle.charge * elementary_charge * (E_vec + 1. / (gamma*self.particle.mass_kg) * np.cross(mom_vec / one_kgm_s_to_mev_c, B_vec))
+        a = self.particle.charge_true * elementary_charge * (E_vec + 1. / (gamma*self.particle.mass_kg) * np.cross(mom_vec / one_kgm_s_to_mev_c, B_vec))
         # a --> MeV / c
         return a * one_kgm_s_to_mev_c
 
@@ -86,7 +93,7 @@ class trajectory_solver(object):
         pz0 = p0 * np.cos(self.init_conds.theta0)
         y_init = [self.init_conds.x0, self.init_conds.y0, self.init_conds.z0, px0, py0, pz0]
         print(f"y_init: {y_init}")
-
+        start_time = time.time()
         sol = solve_ivp(self.lorentz_update, t_span=t_span, y0 = y_init,\
                 method=method, atol=atol, rtol=rtol, t_eval=t_eval)
         self.t = pd.Series(sol.t)
@@ -100,6 +107,8 @@ class trajectory_solver(object):
         self.vy = c * self.py / self.E
         self.vz = c * self.pz / self.E
         print("Trajectory calculation complete!")
+        end_time = time.time()
+        print(f"Runtime: {(end_time - start_time):.4f} s")
         return sol
 
     def plot3d(self):
