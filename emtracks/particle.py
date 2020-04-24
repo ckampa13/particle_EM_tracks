@@ -8,8 +8,8 @@ from scipy.constants import c, elementary_charge
 from scipy.integrate import solve_ivp
 
 import pypdt
-from conversions import one_gev_c2_to_kg, one_kgm_s_to_mev_c
-from plotting import config_plots
+from .conversions import one_gev_c2_to_kg, one_kgm_s_to_mev_c
+from .plotting import config_plots
 config_plots()
 
 
@@ -103,7 +103,7 @@ class trajectory_solver(object):
     def plot3d(self):
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111, projection='3d')
-        # ax.plot(self.dataframe.x, self.dataframe.y, self.dataframe.z, 'k-', alpha=0.2, zorder=99)
+        ax.plot(self.dataframe.x, self.dataframe.y, self.dataframe.z, 'k-', alpha=0.2, zorder=99)
         p = ax.scatter(self.dataframe.x, self.dataframe.y, self.dataframe.z, c=self.dataframe.t, cmap="viridis", s=2, alpha=1., zorder=101)
         cb = fig.colorbar(p)
         cb.set_label('t [s]', rotation=0.)
