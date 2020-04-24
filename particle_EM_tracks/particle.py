@@ -66,7 +66,7 @@ class trajectory_solver(object):
         f[3:] = self.lorentz_accel(B_vec, E_vec, mom_vec, gamma)
         return f
 
-    def solve_trajectory(self, verbose=False, method='DOP853', atol=1e-10, rtol=1e-10):
+    def solve_trajectory(self, verbose=True, method='DOP853', atol=1e-10, rtol=1e-10):
     # def solve_trajectory(self, atol=1e-10, rtol=1e-10):
         t_span = (self.init_conds.t0, self.init_conds.tf)
         t_eval = np.linspace(self.init_conds.t0, self.init_conds.tf, self.init_conds.N_t)
