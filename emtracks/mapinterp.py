@@ -17,14 +17,14 @@ def get_df_interp_func(filename=None, df=None, gauss=True, mm=False, scipy_inter
             df = pd.read_pickle(filename)
         else:
             df = pd.read_csv(filename)
-        if not gauss:
-            df["Bx"] = df["Bx"] / 1e4
-            df["By"] = df["By"] / 1e4
-            df["Bz"] = df["Bz"] / 1e4
-        if mm:
-            df["X"] = df["X"] * 1e3
-            df["Y"] = df["Y"] * 1e3
-            df["Z"] = df["Z"] * 1e3
+    if not gauss:
+        df["Bx"] = df["Bx"] / 1e4
+        df["By"] = df["By"] / 1e4
+        df["Bz"] = df["Bz"] / 1e4
+    if mm:
+        df["X"] = df["X"] * 1e3
+        df["Y"] = df["Y"] * 1e3
+        df["Z"] = df["Z"] * 1e3
 
     xs = df.X.unique()
     ys = df.Y.unique()
