@@ -2,6 +2,7 @@ import time
 import math
 import numpy as np
 import pandas as pd
+import dill as pkl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.constants import c, elementary_charge
@@ -14,13 +15,19 @@ config_plots()
 
 
 class trajectory_solver(object):
-    def __init__(self, init_conds=None, particle_id=11, B_func=lambda p_vec: np.array([0.,0.,1.]), E_func = lambda p_vec: np.array([0., 0., 0.])):
+    def __init__(self, init_conds=None, bounds=None, particle_id=11, B_func=lambda p_vec: np.array([0.,0.,1.]), E_func = lambda p_vec: np.array([0., 0., 0.])):
         '''
         Default particle_id is for electron
 
         B_func should take in 3D numpy array of position, but defaults to a 1 Tesla field in the z direction.
         '''
         self.init_conds = init_conds
+        self.bounds = bounds
+        # dummy termination (no termination) if no bounds
+        if bounds is None:
+            self.terminate = lambda t, x: 1
+        else:
+            self.terminate = get_terminate(bounds)
         if particle_id < 0:
             sign = -1
         else:
@@ -32,8 +39,17 @@ class trajectory_solver(object):
         self.B_func = B_func
         self.E_func = E_func
 
-    # def set_init_conds(self, init_conds):
-    #     self.init_conds = init_conds
+    @classmethod
+    def from_pickle(cls, filename):
+        return pkl.load(open(filename, "rb"))
+
+    @classmethod
+    def to_pickle(obj, filename):
+        # delete B_func to avoid bloat
+        # should include B_func meta data somewhere. FIX ME
+        del(obj.B_func)
+        # use dill package as "pkl" for picking lambda fcns
+        pkl.dump(obj, file=open(filename, 'wb'))
 
     def gamma(self, v_vec):
         '''
@@ -78,7 +94,7 @@ class trajectory_solver(object):
             print(f"y_init: {y_init}")
         start_time = time.time()
         sol = solve_ivp(self.lorentz_update, t_span=t_span, y0 = y_init,\
-                method=method, atol=atol, rtol=rtol, t_eval=t_eval)
+                method=method, atol=atol, rtol=rtol, t_eval=t_eval, events=self.terminate)
         t = sol.t
         x, y, z, px, py, pz = sol.y
         self.dataframe = pd.DataFrame({"t":t,"x":x,"y":y,"z":z,"px":px,"py":py,"pz":pz})
@@ -100,11 +116,12 @@ class trajectory_solver(object):
         # return solution object for further use by user
         return sol
 
-    def plot3d(self):
-        fig = plt.figure(figsize=(12, 8))
-        ax = fig.add_subplot(111, projection='3d')
+    def plot3d(self, fig=None, ax=None, cmap="viridis"):
+        if fig is None:
+            fig = plt.figure(figsize=(12, 8))
+            ax = fig.add_subplot(111, projection='3d')
         ax.plot(self.dataframe.x, self.dataframe.y, self.dataframe.z, 'k-', alpha=0.2, zorder=99)
-        p = ax.scatter(self.dataframe.x, self.dataframe.y, self.dataframe.z, c=self.dataframe.t, cmap="viridis", s=2, alpha=1., zorder=101)
+        p = ax.scatter(self.dataframe.x, self.dataframe.y, self.dataframe.z, c=self.dataframe.t, cmap=cmap, s=2, alpha=1., zorder=101)
         cb = fig.colorbar(p)
         cb.set_label('t [s]', rotation=0.)
         ax.set_xlabel('\nX [m]', linespacing=3.0)
@@ -139,6 +156,16 @@ class trajectory_solver(object):
         fig.tight_layout()
         return fig, axs
 
+# termination
+def get_terminate(bounds):
+    def terminate(t, y):
+        pos = y[:3]
+        conds = [pos[0]<bounds.xmin, pos[0]>bounds.xmax,
+                 pos[1]<bounds.ymin, pos[1]>bounds.ymax,
+                 pos[2]<bounds.zmin, pos[2]>bounds.zmax]
+        return int(not any(conds))
+    terminate.terminal = True
+    return terminate
 
 # PLOTTING ORDER FIX
 def get_camera_position(ax):

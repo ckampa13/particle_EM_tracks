@@ -5,7 +5,7 @@ import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 
 
-def get_df_interp_func(filename=None, df=None, gauss=True, mm=False, scipy_interp=False):
+def get_df_interp_func(filename=None, df=None, gauss=True, mm=False, scipy_interp=False, bounds=None):
     '''
     This factory function will return an interpolating function for any field map. An input x,y,z will output the corresponding Bx,By,Bz or Br,Bphi,Bz. Will decide later if linear interpolation is good enough.
 
@@ -29,6 +29,20 @@ def get_df_interp_func(filename=None, df=None, gauss=True, mm=False, scipy_inter
     xs = df.X.unique()
     ys = df.Y.unique()
     zs = df.Z.unique()
+
+    if bounds is not None:
+        xmin = xs[xs < bounds.xmin][-1]
+        xmax = xs[xs > bounds.xmax][0]
+        ymin = ys[ys < bounds.ymin][-1]
+        ymax = ys[ys > bounds.ymax][0]
+        zmin = zs[zs < bounds.zmin][-1]
+        zmax = zs[zs > bounds.zmax][0]
+        query_string = f"X>={xmin} & X<={xmax} & Y>={ymin} & Y<={ymax} & Z>={zmin} & Z<={zmax}"
+        df = df.query(query_string)
+
+        xs = df.X.unique()
+        ys = df.Y.unique()
+        zs = df.Z.unique()
 
     dx = xs[1]-xs[0]
     dy = ys[1]-ys[0]

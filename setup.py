@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/FMS-Mu2e/particle_EM_tracks",
     packages=setuptools.find_packages(),
     install_requires=[
-        "numpy", "scipy", "pandas", "matplotlib", "pypdt"
+        "numpy", "scipy", "pandas", "matplotlib", "pypdt", "dill"
     ],
     python_requires='>=3.6',
     include_package_data=True,
