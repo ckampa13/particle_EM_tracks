@@ -1,7 +1,6 @@
 import numpy as np
 from collections import namedtuple
 
-# InitConds = namedtuple('InitConds',['t0','tf','N_t','x0','y0','z0','p0','theta0','phi0'])
 InitConds = namedtuple('InitConds',['t0','tf','N_t','x0','y0','z0','p0','theta0','phi0'])
 Bounds = namedtuple('Bounds',['xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax'])
 

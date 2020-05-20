@@ -1,5 +1,6 @@
 import time
 import math
+import copy
 import numpy as np
 import pandas as pd
 import dill as pkl
@@ -7,9 +8,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.constants import c, elementary_charge
 from scipy.integrate import solve_ivp
+import scipy.optimize as optimize
 
 import pypdt
-from .conversions import one_gev_c2_to_kg, one_kgm_s_to_mev_c
+from .conversions import one_gev_c2_to_kg, one_kgm_s_to_mev_c, q_factor
 from .plotting import config_plots
 config_plots()
 
@@ -43,13 +45,15 @@ class trajectory_solver(object):
     def from_pickle(cls, filename):
         return pkl.load(open(filename, "rb"))
 
-    @classmethod
-    def to_pickle(obj, filename):
+    def to_pickle(self, filename):
         # delete B_func to avoid bloat
         # should include B_func meta data somewhere. FIX ME
-        del(obj.B_func)
+        B_ = copy.deepcopy(self.B_func)
+        del(self.B_func)
         # use dill package as "pkl" for picking lambda fcns
-        pkl.dump(obj, file=open(filename, 'wb'))
+        pkl.dump(self, file=open(filename, 'wb'))
+        # reset the B_func
+        self.B_func = B_
 
     def gamma(self, v_vec):
         '''
@@ -116,6 +120,46 @@ class trajectory_solver(object):
         # return solution object for further use by user
         return sol
 
+    def analyze_trajectory(self, query=None, B=None, step=100, stride=10):
+	# step = # rows to use for each arc segment
+	# stride = points between each included reco point
+	# N points in track reco = step // stride
+        if B is None:
+            B = self.B_func
+        if query is None:
+            df = self.dataframe.copy()
+        else:
+            df = self.dataframe.query(query)
+        # print(df.head())
+
+        N_steps = int(len(df) // step)
+        charge_signs, masses, pTs, pzs, ps, Es, vs = [], [], [], [], [], [], []
+        # ts_, ps_,
+        # charge_signs, masses, pTs, pzs, ps, Es = [], [], [], [], [], []
+        for i in range(N_steps):
+            start = i * step
+            stop = start + step
+            df_ = df[start:stop:stride]
+            ch, m, pT, pz, p, E, v = reco_arc(df_, B)
+       	    charge_signs.append(ch)
+            masses.append(m)
+            pTs.append(pT)
+            pzs.append(pz)
+            ps.append(p)
+            Es.append(E)
+            vs.append(v)
+
+        charge_signs = np.array(charge_signs)
+        masses = np.array(masses)
+        pTs = np.array(pTs)
+        pzs = np.array(pzs)
+        ps = np.array(ps)
+        Es = np.array(Es)
+        vs = np.array(vs)
+
+        self.df_reco = pd.DataFrame({'p':ps, 'E':Es, 'm':masses, 'charge':charge_signs, 'pT':pTs, 'pz': pzs, 'v': vs})
+
+
     def plot3d(self, fig=None, ax=None, cmap="viridis"):
         if fig is None:
             fig = plt.figure(figsize=(12, 8))
@@ -166,6 +210,67 @@ def get_terminate(bounds):
         return int(not any(conds))
     terminate.terminal = True
     return terminate
+
+# reco momentum
+# circle fit
+def calc_R(xc, yc, x, y):
+    return np.sqrt((x-xc)**2 + (y-yc)**2)
+
+def circ_alg_dist(center, x, y):
+    Ri = calc_R(*center, x, y)
+    return Ri - Ri.mean()
+
+def reco_circle(x, y):
+    x_m = np.mean(x)
+    y_m = np.mean(y)
+    center_est = x_m, y_m
+    center_fit, ier = optimize.leastsq(circ_alg_dist, center_est, args=(x, y))
+    Ri_fit = calc_R(*center_fit, x, y)
+    R_fit = np.mean(Ri_fit)
+    R_residual = np.sum((Ri_fit - R_fit)**2)
+    return center_fit, R_fit, Ri_fit, R_residual
+
+# full reco
+def reco_arc(df, B_func):
+    x, y, z, t, v, pT, pz, p, E = df[['x','y','z','t', 'v', 'pT', 'pz', 'p','E']].values.T
+    # 1. reco circle
+    center, R, Ri, res = reco_circle(x, y)
+    # 2. Calculate theta
+    thetai = np.arctan2(y-center[1], x-center[0])
+    if not (thetai[0] <= 0. and thetai[-1] > 0.):
+        thetai = (thetai + 2 * np.pi) % (2 * np.pi)
+    arcangle = thetai[-1] - thetai[0]
+    # 3. Calculate arc length
+    arclength = R * arcangle
+    # 4. Calculate z length
+    G = np.array([np.ones_like(t), t]).T
+    GtGinv = np.linalg.inv(G.T @ G)
+    m = GtGinv @ G.T @ z
+    # m[0] intercept, m[1] slope (aka speed in z direction, m / s)
+    zlength = m[1] * (t[-1] - t[0])
+    vz = m[1]
+    # calculate vT
+    vT = arclength / (t[-1] - t[0])
+    # calculate v
+    v = (vT**2 + vz**2)**(1/2)
+    # calculate beta
+    beta = v / c
+    # 5. p, v, etc.
+    tantheta = arclength / zlength
+    gamma = (1 - beta**2)**(-1/2)
+    Bxs, Bys, Bzs = np.array([B_func([xi,yi,zi]) for xi,yi,zi in zip(x,y,z)]).T
+    Bs = (Bxs**2 + Bys**2 + Bzs**2)**(1/2)
+    BTs = (Bxs**2 + Bys**2)**(1/2)
+    # NEED TO FIND BEST B
+    B = Bzs.mean()#Bs.mean() - BTs.mean()#Bzs.min()#Bzs.mean()
+    pT = q_factor * B * R * 1000.
+    pz = pT / tantheta
+    p = (pT**2 + pz**2)**(1/2)
+    mass = p * c / (gamma * v )
+    E = (p**2 + mass**2)**(1/2)
+    # charge
+    charge_sign = - np.sign(m[1]) * np.sign(np.arctan2(arclength, zlength))
+    return charge_sign, mass, pT, pz, p, E, v
 
 # PLOTTING ORDER FIX
 def get_camera_position(ax):

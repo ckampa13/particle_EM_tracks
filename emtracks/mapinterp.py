@@ -17,6 +17,8 @@ def get_df_interp_func(filename=None, df=None, gauss=True, mm=False, scipy_inter
             df = pd.read_pickle(filename)
         else:
             df = pd.read_csv(filename)
+    else:
+        df = df.copy()
     if not gauss:
         df["Bx"] = df["Bx"] / 1e4
         df["By"] = df["By"] / 1e4

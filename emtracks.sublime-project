@@ -1,0 +1,25 @@
+{
+	"build_systems":
+	[
+		{
+			"name": "mu2e"
+		},
+		{
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+			"name": "Anaconda Python Builder",
+			"selector": "source.python",
+			"shell_cmd": "\"/home/ckampa/anaconda3/envs/mu2e/bin/python\" -u \"$file\""
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	],
+	"settings":
+	{
+		"python_interpreter": "~/anaconda3/envs/mu2e/bin/python",
+		"validate_imports": true
+	}
+}
