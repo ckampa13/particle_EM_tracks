@@ -86,7 +86,7 @@ class trajectory_solver(object):
         f[3:] = self.lorentz_accel(B_vec, E_vec, mom_vec, gamma)
         return f
 
-    def solve_trajectory(self, verbose=False, method='DOP853', atol=1e-10, rtol=1e-10):
+    def solve_trajectory(self, verbose=False, method='DOP853', atol=1e-10, rtol=1e-10, dense=False):
         t_span = (self.init_conds.t0, self.init_conds.tf)
         t_eval = np.linspace(self.init_conds.t0, self.init_conds.tf, self.init_conds.N_t)
         p0 = self.init_conds.p0
@@ -98,7 +98,8 @@ class trajectory_solver(object):
             print(f"y_init: {y_init}")
         start_time = time.time()
         sol = solve_ivp(self.lorentz_update, t_span=t_span, y0 = y_init,\
-                method=method, atol=atol, rtol=rtol, t_eval=t_eval, events=self.terminate)
+                method=method, atol=atol, rtol=rtol, t_eval=t_eval, events=self.terminate,
+                dense_output=dense)
         t = sol.t
         x, y, z, px, py, pz = sol.y
         self.dataframe = pd.DataFrame({"t":t,"x":x,"y":y,"z":z,"px":px,"py":py,"pz":pz})
