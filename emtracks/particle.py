@@ -17,7 +17,7 @@ config_plots()
 
 
 class trajectory_solver(object):
-    def __init__(self, init_conds=None, bounds=None, particle_id=11, B_func=lambda p_vec: np.array([0.,0.,1.]), E_func = lambda p_vec: np.array([0., 0., 0.])):
+    def __init__(self, init_conds=None, bounds=None, particle_id=11, B_func=lambda p_vec: np.array([0.,0.,1.]), E_func = lambda p_vec: np.array([0., 0., 0.]), zevents=None):
         '''
         Default particle_id is for electron
 
@@ -40,6 +40,7 @@ class trajectory_solver(object):
         self.particle.charge_true = self.particle.charge*sign
         self.B_func = B_func
         self.E_func = E_func
+        self.zevents = zevents
 
     @classmethod
     def from_pickle(cls, filename):
@@ -54,6 +55,15 @@ class trajectory_solver(object):
         pkl.dump(self, file=open(filename, 'wb'))
         # reset the B_func
         self.B_func = B_
+
+    def z_event_func(self, t, y):
+        # can define inside class since we don't need to set terminal=True
+        z = y[2]
+        if self.zevents is None:
+            return 1
+        # conds = [z == z_ for z_ in self.zevents]
+        conds = np.isclose(z, self.zevents, atol=1e-2, rtol=1e-2)
+        return int(not any(conds))
 
     def gamma(self, v_vec):
         '''
@@ -94,26 +104,35 @@ class trajectory_solver(object):
         py0 = p0 * np.sin(self.init_conds.theta0) * np.sin(self.init_conds.phi0)
         pz0 = p0 * np.cos(self.init_conds.theta0)
         y_init = [self.init_conds.x0, self.init_conds.y0, self.init_conds.z0, px0, py0, pz0]
+        if self.zevents is None:
+            events_list = [self.terminate]
+        else:
+            events_list = [self.terminate, self.z_event_func]
         if verbose:
             print(f"y_init: {y_init}")
         start_time = time.time()
         sol = solve_ivp(self.lorentz_update, t_span=t_span, y0 = y_init,\
-                method=method, atol=atol, rtol=rtol, t_eval=t_eval, events=self.terminate,
-                dense_output=dense)
+                method=method, atol=atol, rtol=rtol, t_eval=t_eval,\
+                events=events_list, dense_output=dense)
         t = sol.t
+        t_e = sol.t_events
         x, y, z, px, py, pz = sol.y
+        # x_e, y_e, z_e, px_e, py_e, pz_e = sol.y_events
         self.dataframe = pd.DataFrame({"t":t,"x":x,"y":y,"z":z,"px":px,"py":py,"pz":pz})
+        # self.events_df = pd.DataFrame({"t":t_e,"x":x_e,"y":y_e,"z":z_e,"px":px_e,"py":py_e,"pz":pz_e})
         # calculate extra interesting variables
-        self.dataframe.eval("pT = (px**2 + py**2)**(1/2)", inplace=True)
-        self.dataframe.eval("p = (px**2 + py**2 + pz**2)**(1/2)", inplace=True)
-        self.dataframe.eval("E = (p**2 + (@self.particle.mass*1000.)**2)**(1/2)", inplace=True)
-        self.dataframe.eval("beta = p / E", inplace=True)
-        self.dataframe.eval("v = beta * @c", inplace=True)
-        self.dataframe.eval("vx = @c * px / E", inplace=True)
-        self.dataframe.eval("vy = @c * py / E", inplace=True)
-        self.dataframe.eval("vz = @c * pz / E", inplace=True)
-        self.dataframe.loc[:, "theta"] = np.arctan2(self.dataframe.pT, self.dataframe.pz)
-        self.dataframe.loc[:, "phi"] = np.arctan2(self.dataframe.py, self.dataframe.px)
+        # for df in [self.dataframe, self.events_df]:
+        for df in [self.dataframe,]:
+            df.eval("pT = (px**2 + py**2)**(1/2)", inplace=True)
+            df.eval("p = (px**2 + py**2 + pz**2)**(1/2)", inplace=True)
+            df.eval("E = (p**2 + (@self.particle.mass*1000.)**2)**(1/2)", inplace=True)
+            df.eval("beta = p / E", inplace=True)
+            df.eval("v = beta * @c", inplace=True)
+            df.eval("vx = @c * px / E", inplace=True)
+            df.eval("vy = @c * py / E", inplace=True)
+            df.eval("vz = @c * pz / E", inplace=True)
+            df.loc[:, "theta"] = np.arctan2(df.pT, df.pz)
+            df.loc[:, "phi"] = np.arctan2(df.py, df.px)
         end_time = time.time()
         if verbose:
             print("Trajectory calculation complete!")
