@@ -4,21 +4,12 @@ from scipy.constants import c
 from .tools import InitConds
 from .conversions import q_factor
 
+def point_slope(x, xs, ys):
+    slope = (ys[1]-ys[0])/(xs[1]-xs[0])
+    y_result = slope*(x - xs[0]) + ys[0]
+    return y_result
+
 def interp_cole(df, z):
-    # # average z distance between points
-    # delta = (df.z.max() - df.z.min()) / len(df)
-    # # # delta = 10/4001   #approximate z range divided by number of points
-    # mask = (df.z < z + delta) & (df.z > z - delta)
-
-    # while (len(df.z[mask]) != 2):
-    #     if len(df.z[mask]) > 2:
-    #         delta = delta / 1.5
-    #     else:
-    #         delta = delta * 2
-    #     mask = (df.z < z + delta) & (df.z > z - delta)
-
-    # interpolants = df[mask]
-
     try:
         i0 = df[df.z < z].iloc[-1].name
     except:
@@ -32,22 +23,9 @@ def interp_cole(df, z):
     y_interps = interpolants.y.values
     z_interps = interpolants.z.values
 
-    def t(z):
-        slope = (t_interps[1]-t_interps[0])/(z_interps[1]-z_interps[0])
-        t_res = slope*(z - z_interps[0]) + t_interps[0]
-        return t_res
-    def x(z):
-        slope = (x_interps[1]-x_interps[0])/(z_interps[1]-z_interps[0])
-        x_res = slope*(z - z_interps[0]) + x_interps[0]
-        return x_res
-    def y(z):
-        slope = (y_interps[1]-y_interps[0])/(z_interps[1]-z_interps[0])
-        y_res = slope*(z - z_interps[0]) + y_interps[0]
-        return y_res
-
-    t_interp = t(z)
-    x_interp = x(z)
-    y_interp = y(z)
+    t_interp = point_slope(z, z_interps, t_interps)
+    x_interp = point_slope(z, z_interps, x_interps)
+    y_interp = point_slope(z, z_interps, y_interps)
 
     return t_interp, x_interp, y_interp
 
