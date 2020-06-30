@@ -10,10 +10,10 @@ def point_slope(x, xs, ys):
     return y_result
 
 def interp_cole(df, z):
-    try:
-        i0 = df[df.z < z].iloc[-1].name
-    except:
-        i0 = df[df.z >= z].iloc[0].name
+    if z > df.z.max() or z < df.z.min():
+        raise ValueError('Invalid input z for interpolation. '+
+                         f'Try again with {df.z.min():.3f} <= z <= {df.z.max():.3f}')
+    i0 = df[df.z <= z].iloc[-1].name
     if i0 >= len(df)-1:
         i0 = len(df)-2
     interpolants = df.iloc[i0:i0+2]
