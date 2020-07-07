@@ -315,7 +315,7 @@ def plotdifferences(phis, q, nomfinaldatares, disfinaldatares):
 	return fig, fig1, fig2
 
 
-if __name__ == '__main__':
+if __name__ == '_33_main__':
 	nomdata, disdata, phis, N = readpickle()
 	x, y = restructure1(phis, nomdata, disdata, 13)
 	
@@ -357,8 +357,9 @@ def plot3d(phis, nomdata, disdata, zstart, zend, numsteps):
 		ax.scatter(res(i,phis,nomdata,disdata)[0], res(i,phis, nomdata, disdata)[1], i, c='b')
 		ax.scatter(res(i,phis,nomdata,disdata)[2], res(i,phis, nomdata, disdata)[3], i, c='r')
 
-if __name__ == '_3_main__':
+if __name__ == '__main__':
 	nomdata, disdata, phis, N = readpickle()
+	print(nomdata)
 	yvsx(phis, nomdata, disdata, 11)
 	plot3d(phis, nomdata, disdata, 6, 13, 100)
 	plt.show()
