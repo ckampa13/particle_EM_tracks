@@ -13,6 +13,12 @@ config_plots()
 datadir = '/home/ckampa/data/pickles/distortions/linear_gradient/'
 plotdir = '/home/ckampa/data/plots/distortions/linear_gradient/'
 
+# significance function
+def signal_significance(s, b):
+    # S = sqrt(2 * ((s+b) * ln(1+s/b) -s))
+    S = (2*((s+b)*np.log(1+s/b)-s))**(1/2)
+    return S
+
 # scale for event generation
 scale = 10000
 # plot and cut windows
@@ -58,7 +64,8 @@ bins = np.linspace(102., 106., 81)
 # original results
 fig, ax = plt.subplots()
 ax.hist(p_ce, edgecolor='red', bins=bins, weights=1/scale*np.ones_like(p_ce), histtype='step', linewidth=2.,
-        label=label_temp.format('Signal e-:', np.mean(p_ce), np.std(p_ce), len(p_ce)/scale, N_CE_window, N_CE_window_dig))
+        label=label_temp.format('Signal e-:', np.mean(p_ce), np.std(p_ce), len(p_ce)/scale, N_CE_window, N_CE_window_dig)
+        +f'Signal Significance: {signal_significance(N_CE_window, N_DIO_window):0.1f}\n')
 ax.hist(p_dio, edgecolor='blue', bins=bins, weights=1/scale*np.ones_like(p_dio), histtype='step', linewidth=2.,
         label=label_temp.format('DIO e-:', np.mean(p_dio), np.std(p_dio), len(p_dio)/scale, N_DIO_window, N_DIO_window_dig))
 ax.plot([p_low_cut, p_low_cut], [0, 0.45], c='gray', linestyle='--', label=f'Momentum Window:\n[{p_low_cut:.2f}, {p_hi_cut:.2f}] MeV/c\n')
@@ -75,7 +82,8 @@ fig.savefig(plotdir+'cd3_ce_dio_plot_original.png')
 # smeared results
 fig2, ax2 = plt.subplots()
 ax2.hist(p_ce_adj, edgecolor='red', bins=bins, weights=1/scale*np.ones_like(p_ce_adj), histtype='step', linewidth=2.,
-        label=label_temp.format('Signal e-:', np.mean(p_ce_adj), np.std(p_ce_adj), len(p_ce_adj)/scale, N_CE_window_adj, N_CE_window_dig))
+         label=label_temp.format('Signal e-:', np.mean(p_ce_adj), np.std(p_ce_adj), len(p_ce_adj)/scale, N_CE_window_adj, N_CE_window_dig)
+         +f'Signal Significance: {signal_significance(N_CE_window_adj, N_DIO_window_adj):0.1f}\n')
 ax2.hist(p_dio_adj, edgecolor='blue', bins=bins, weights=1/scale*np.ones_like(p_dio_adj), histtype='step', linewidth=2.,
         label=label_temp.format('DIO e-:', np.mean(p_dio_adj), np.std(p_dio_adj), len(p_dio_adj)/scale, N_DIO_window_adj, N_DIO_window_dig))
 ax2.plot([p_low_cut, p_low_cut], [0, 0.45], c='gray', linestyle='--', label=f'Momentum Window:\n[{p_low_cut:.2f}, {p_hi_cut:.2f}] MeV/c\n')

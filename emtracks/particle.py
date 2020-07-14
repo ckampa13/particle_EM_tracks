@@ -11,6 +11,7 @@ from scipy.integrate import solve_ivp
 import scipy.optimize as optimize
 
 import pypdt
+from .helix import fit_helix
 from .conversions import one_gev_c2_to_kg, one_kgm_s_to_mev_c, q_factor
 from .plotting import config_plots
 config_plots()
@@ -139,6 +140,34 @@ class trajectory_solver(object):
             print(f"Runtime: {(end_time - start_time):.4f} s")
         # return solution object for further use by user
         return sol
+
+    def analyze_trajectory_LHelix(self, query="z >= 8.41 & z <= 11.66", step=50, stride=1):
+        if query is None:
+            df = self.dataframe.copy()
+        else:
+            df = self.dataframe.query(query)
+        N_steps = int(len(df) // step)
+        # pTs, pzs, ps, Es = [], [], [], []
+        # pTs_nr, pzs_nr, ps_nr, Es_nr = [], [], [], []
+        ps, ps_nr = [], []
+        df_fits = []
+        df_fits_nr = []
+        for i in range(N_steps):
+            start = i * step
+            stop = start + step
+            df_ = df[start:stop:stride]
+            track_data = df_[['t','x','y','z']].copy().values.T
+            B_data = np.array([self.B_func(coord) for coord in track_data[1:].T]).T
+            mom_fit, result, df_fit, params_fit, mom_guess, params_guess = fit_helix(track_data, B_data)
+            mom_fit_nr, result_nr, df_fit_nr, params_fit_nr, mom_guess_nr, params_guess_nr = fit_helix(track_data, B_data, rot=False)
+            df_fits.append(df_fit)
+            df_fits_nr.append(df_fit_nr)
+            ps.append(mom_fit)
+            ps_nr.append(mom_fit_nr)
+
+        self.helix_reco_df = pd.concat(df_fits, ignore_index=True)
+        self.no_rotation_helix_reco_df = pd.concat(df_fits_nr, ignore_index=True)
+        self.helix_reco_moms_df = pd.DataFrame({'p':ps, 'p_no_rotation':ps_nr})
 
     def analyze_trajectory(self, query=None, B=None, step=100, stride=10):
 	# step = # rows to use for each arc segment
