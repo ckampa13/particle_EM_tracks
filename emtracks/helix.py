@@ -27,6 +27,7 @@ def fit_helix(track_data, B_data, m=m_e, q=q_e, rot=True):
     track_data = track_data.copy() # to not change track_data information
     track_data[0] = track_data[0]*1e9 # convert to ns
     track_data[1:] = track_data[1:]*1e3 # convert to mm
+    # x0, y0 = track_data[1:3,0] # for phi0 estimate
     # translations:
     translate_vec = track_data[:,0].reshape(1, 4)
     track_data = track_data - np.repeat(translate_vec, track_data.shape[1], axis=0).T
@@ -59,10 +60,11 @@ def fit_helix(track_data, B_data, m=m_e, q=q_e, rot=True):
     # print(xyz_ends)
     Lambda_guess = Lambda_est(R_guess, xyz_ends)
     # phi0
-    x0, y0 = track_data_rot[1:3,0]
-    x0p = -y0
-    y0p = x0
-    phi0_guess = np.arctan2(y0p, x0p)
+    # x0, y0 = track_data_rot[1:3,0] # WRONG-->[0,0,0]
+    # x0p = -y0
+    # y0p = x0
+    # phi0_guess = np.arctan2(y0p, x0p)
+    phi0_guess = abs(np.arctan2(C_x_guess, C_y_guess))
     # t0 should be 0 by construction (the translation)
     t0_guess = 0.
     # guess dict
@@ -72,15 +74,17 @@ def fit_helix(track_data, B_data, m=m_e, q=q_e, rot=True):
     # construct model
     model = lm.Model(LHelix_P_pos, independent_vars=['t'])
     params = lm.Parameters()
-    # params.add('R', value=R_guess, min=R_guess-25, max=R_guess+25)
-    # params.add('Lambda', value=Lambda_guess, min=Lambda_guess-25, max=Lambda_guess+25)
-    # params.add('C_x', value=C_x_guess, min=C_x_guess-10, max=C_x_guess+10)
-    # params.add('C_y', value=C_y_guess, min=C_y_guess-10, max=C_y_guess+10)
-    params.add('R', value=R_guess, )#min=R_guess-25, max=R_guess+25)
-    params.add('Lambda', value=Lambda_guess,) #min=Lambda_guess-25, max=Lambda_guess+25)
-    params.add('C_x', value=C_x_guess,) #min=C_x_guess-10, max=C_x_guess+10)
-    params.add('C_y', value=C_y_guess,) #min=C_y_guess-10, max=C_y_guess+10)
-    params.add('phi0', value=phi0_guess, min=0., max=2*np.pi)
+    params.add('R', value=R_guess, min=R_guess-10, max=R_guess+10)
+    params.add('Lambda', value=Lambda_guess, min=Lambda_guess-10, max=Lambda_guess+10)
+    params.add('C_x', value=C_x_guess, min=C_x_guess-10, max=C_x_guess+10)
+    params.add('C_y', value=C_y_guess, min=C_y_guess-10, max=C_y_guess+10)
+    params.add('phi0', value=phi0_guess, min=phi0_guess-np.pi/10, max=phi0_guess+np.pi/10)
+    # params.add('t0', value=t0_guess, min=t0_guess-1, max=t0_guess+1)#vary=False)
+    # params.add('R', value=R_guess, )#min=R_guess-25, max=R_guess+25)
+    # params.add('Lambda', value=Lambda_guess,) #min=Lambda_guess-25, max=Lambda_guess+25)
+    # params.add('C_x', value=C_x_guess,) #min=C_x_guess-10, max=C_x_guess+10)
+    # params.add('C_y', value=C_y_guess,) #min=C_y_guess-10, max=C_y_guess+10)
+    # params.add('phi0', value=phi0_guess, min=0., max=2*np.pi)
     params.add('t0', value=t0_guess, vary=False)
     params.add('m', value=m, vary=False)
     params.add('q', value=q, vary=False)
