@@ -13,6 +13,15 @@ config_plots()
 datadir = '/home/ckampa/data/pickles/distortions/linear_gradient/'
 plotdir = '/home/ckampa/data/plots/distortions/linear_gradient/'
 
+dist_name = 'LinGrad'
+# dist_name = 'Mau10_0TS'
+if dist_name == 'LinGrad':
+    file_suffix = dist_name
+else:
+    file_suffix = 'LHelix'
+
+plot_file_pre = plotdir+f'run_04/LHelix_reco/{dist_name}/'
+
 # significance function
 def signal_significance(s, b):
     # S = sqrt(2 * ((s+b) * ln(1+s/b) -s))
@@ -28,9 +37,12 @@ p_low_cut = 103.85
 p_hi_cut = 104.90
 
 # load emtracks p residuals
-df_run = pd.read_pickle(datadir+'run_04/MC_sample_plus_reco_chi2.pkl')
-df_run.loc[:, 'Residual Nominal'] = df_run['p_chi2_nom'] - df_run['p_mc']
-df_run.loc[:, 'Residual Distorted'] = df_run['p_chi2_dis'] - df_run['p_mc']
+df_run = pd.read_pickle(datadir+f'run_04/MC_sample_plus_reco_{file_suffix}.pkl')
+df_run.loc[:, 'Residual Nominal'] = df_run['mom_LHelix_nom'] - df_run['p_mc']
+df_run.loc[:, 'Residual Distorted'] = df_run['mom_LHelix_dis'] - df_run['p_mc']
+# df_run = pd.read_pickle(datadir+'run_04/MC_sample_plus_reco_chi2.pkl')
+# df_run.loc[:, 'Residual Nominal'] = df_run['p_chi2_nom'] - df_run['p_mc']
+# df_run.loc[:, 'Residual Distorted'] = df_run['p_chi2_dis'] - df_run['p_mc']
 
 # load digitization file
 digit_file = '/home/ckampa/data/root/cd3_ce_and_background_digitized.csv'
@@ -76,8 +88,8 @@ ax.set_title('CD3 Era Parameterization\nOriginal Results')
 ax.set_ylim([0,1.])
 ax.legend(loc='upper right')
 fig.tight_layout()
-fig.savefig(plotdir+'cd3_ce_dio_plot_original.pdf')
-fig.savefig(plotdir+'cd3_ce_dio_plot_original.png')
+fig.savefig(plot_file_pre+'cd3_ce_dio_plot_original.pdf')
+fig.savefig(plot_file_pre+'cd3_ce_dio_plot_original.png')
 
 # smeared results
 fig2, ax2 = plt.subplots()
@@ -90,9 +102,9 @@ ax2.plot([p_low_cut, p_low_cut], [0, 0.45], c='gray', linestyle='--', label=f'Mo
 ax2.plot([p_hi_cut, p_hi_cut], [0, 0.45], c='gray', linestyle='--')
 ax2.set_xlabel('Track momentum, MeV/c')
 ax2.set_ylabel('Events per 0.05 MeV/c')
-ax2.set_title('CD3 Era Parameterization\nWith B Linear Gradient Momentum Errors')
+ax2.set_title(f'CD3 Era Parameterization\nWith Sampled B Distortion Momentum Errors ({dist_name})')
 ax2.set_ylim([0,1.])
 ax2.legend(loc='upper right')
 fig2.tight_layout()
-fig2.savefig(plotdir+'cd3_ce_dio_plot_smeared.pdf')
-fig2.savefig(plotdir+'cd3_ce_dio_plot_smeared.png')
+fig2.savefig(plot_file_pre+'cd3_ce_dio_plot_smeared.pdf')
+fig2.savefig(plot_file_pre+'cd3_ce_dio_plot_smeared.png')
