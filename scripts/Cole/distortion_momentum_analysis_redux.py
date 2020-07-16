@@ -16,33 +16,30 @@ from emtracks.Bdist import get_B_df_distorted
 
 # directories
 datadir = '/home/ckampa/data/pickles/distortions/linear_gradient/'
-plotdir = '/home/ckampa/data/plots/distortions/linear_gradient/'
 
 # set up B interpolators
 ddir = '/home/shared_data/'
+# fBnom = ddir+"Bmaps/Mau10/combined/Mau10_1.00xDS_1.00xPS-TS_DSMap.p"
+# fBdis = ddir+"Bmaps/Mau10/combined/Mau10_1.00xDS_{0}xPS-TS_DSMap.p"
 fBnom = ddir+"Bmaps/Mu2e_DSMap_V13.p"
-fBdis = ddir+"Bmaps/Mau10/combined/Mau10_1.00xDS_0.00xPS-TS_DSMap.p"
+fBdis = ddir+"Bmaps/Mau13/subtracted/Mau13_1.00xDS_{0}xPS-TS_DSMap.p"
 
 #### Solenoid off
-# B_Mu2e_nom = get_df_interp_func(fBnom, gauss=False)
-# B_Mu2e_dis = get_df_interp_func(fBdis, gauss=False)
+fields = [f'{n:0.2f}' for n in np.linspace(0.,0.9, 10)] # which fields to analyze
+B_Mu2e_nom = get_df_interp_func(fBnom, gauss=False)
+B_Mu2e_dis_list = [get_df_interp_func(fBdis.format(field), gauss=False) for field in fields]
 ####
 
 #### Linear Gradient
-df_Mu2e_nom = pd.read_pickle(fBnom)
-df_Mu2e_dis = get_B_df_distorted(df_Mu2e_nom, v="0")
-# B functions
-B_Mu2e_nom = get_df_interp_func(df=df_Mu2e_nom, gauss=False)#, bounds=bounds_Mu2e)
-B_Mu2e_dis = get_df_interp_func(df=df_Mu2e_dis, gauss=False)#, bounds=bounds_Mu2e)
+# df_Mu2e_nom = pd.read_pickle(fBnom)
+# df_Mu2e_dis = get_B_df_distorted(df_Mu2e_nom, v="0")
+# # B functions
+# B_Mu2e_nom = get_df_interp_func(df=df_Mu2e_nom, gauss=False)#, bounds=bounds_Mu2e)
+# B_Mu2e_dis = get_df_interp_func(df=df_Mu2e_dis, gauss=False)#, bounds=bounds_Mu2e)
 
-del(df_Mu2e_nom)
-del(df_Mu2e_dis)
+# del(df_Mu2e_nom)
+# del(df_Mu2e_dis)
 ####
-
-# check plot dir existence
-for d in [plotdir, plotdir+'run_04/', plotdir+'run_04/LHelix_reco/']:
-    if not os.path.exists(d):
-        os.makedirs(d)
 
 # analyze a given track w nominal and distorted field
 def analyze_particle_momentum(particle_num, name, outdir):
@@ -55,10 +52,12 @@ def analyze_particle_momentum(particle_num, name, outdir):
     e_Mu2e.analyze_trajectory_LHelix(step=100, stride=1)
     mom_nom = e_Mu2e.mom_LHelix
     # distorted
-    e_Mu2e.B_func = B_Mu2e_dis
-    e_Mu2e.analyze_trajectory_LHelix(step=100, stride=1)
-    mom_dis = e_Mu2e.mom_LHelix
-    return mom_nom, mom_dis
+    mom_dis_list = []
+    for B_Mu2e_dis in B_Mu2e_dis_list:
+        e_Mu2e.B_func = B_Mu2e_dis
+        e_Mu2e.analyze_trajectory_LHelix(step=100, stride=1)
+        mom_dis_list.append(e_Mu2e.mom_LHelix)
+    return mom_nom, mom_dis_list
 
 # driving function
 def run_analysis(name="run_04", outdir="/home/ckampa/data/pickles/distortions/linear_gradient/run_04/", N_lim=None):
@@ -79,11 +78,13 @@ def run_analysis(name="run_04", outdir="/home/ckampa/data/pickles/distortions/li
     reco_tuples = Parallel(n_jobs=num_cpu)(delayed(analyze_particle_momentum)(num, name=name, outdir=outdir) for num in tqdm(particle_nums, file=sys.stdout, desc='particle #'))
     mom_noms = np.array([i[0] for i in reco_tuples])
     mom_diss = np.array([i[1] for i in reco_tuples])
+    results_dict = {f'mom_dis_{i/10:0.2f}TS': mom_diss[:,i] for i in range(len(B_Mu2e_dis_list))}
+    results_dict['mom_nom'] = mom_noms
     # save to dataframe
-    df_run.loc[:, 'mom_LHelix_nom'] = mom_noms
-    df_run.loc[:, 'mom_LHelix_dis'] = mom_diss
-    # df_run.to_pickle(outdir+'MC_sample_plus_reco_LHelix.pkl') # Solenoid Off
-    df_run.to_pickle(outdir+'MC_sample_plus_reco_LinGrad.pkl') # Linear Gradient
+    for key, val in results_dict.items():
+        df_run.loc[:, key] = val
+    # df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau10_TSOff.pkl') # Solenoid Off (Mau10 combination)
+    df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau13_TSOff.pkl') # Solenoid Off (Mau13 subtraction)
     stop = time.time()
     print("Calculations Complete")
     print(f"Runtime: {stop-start} s, {(stop-start)/60.} min, {(stop-start)/60./60.} hr")
