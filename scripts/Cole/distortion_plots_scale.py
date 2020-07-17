@@ -81,8 +81,9 @@ means = np.array([df_run[f'mom_dis_{i:0.2f}TS'].mean() for i in scales_dis]+[df_
 stds = np.array([df_run[f'mom_dis_{i:0.2f}TS'].std() for i in scales_dis]+[df_run['mom_nom'].std()])
 means_fit, m, b, chi2red = fit_linear(scales, means, stds)
 p_mc = df_run.p_mc.values[0]
+# mean vs scale
 fig = plt.figure()
-plt.errorbar(scales, means, yerr=stds, fmt='.', markersize=10, capsize=6, capthick=2, elinewidth=2)
+plt.errorbar(scales, means, yerr=stds, fmt='.', markersize=10, capsize=6, capthick=2, elinewidth=2, label='Mean (point), StdDev. (error bar)')
 plt.plot([0,1], [p_mc, p_mc], 'r--', label=f'True Momentum = {p_mc:0.3f} MeV/c')
 plt.plot(scales, means_fit, '-.', c='gray', label=f'\nFit: mom = {m:0.3f} * scale + {b:0.3f}\n'+r'$\chi^2_{\mathrm{red.}}=$'+f'{chi2red:0.4f}\n')
 plt.legend()
@@ -93,3 +94,19 @@ plt.title(nice_name)
 fig.tight_layout()
 fig.savefig(plot_file_pre+f'mean_reco_mom_vs_TS_scale_{file_suffix}.pdf')
 fig.savefig(plot_file_pre+f'mean_reco_mom_vs_TS_scale_{file_suffix}.png')
+
+# std vs scale
+fig = plt.figure()
+plt.scatter(scales, stds, s=35, zorder=110, label='StDev. (point)')
+if file_suffix == 'Mau13_TSOff':
+    stds_fit, m_s, b_s, chi2red_s = fit_linear(scales, stds, np.ones_like(scales))
+    plt.plot(scales, stds_fit, '-.', c='gray', zorder=100, label=f'\nFit: stddev = {m_s:0.3f} * scale + {b_s:0.3f}\n'+r'$\chi^2_{\mathrm{red.}}=$'+f'{chi2red_s:0.4f}\n')
+    plt.legend()
+plt.xticks(scales)
+plt.xlabel('PS+TS Scale')
+plt.ylabel('StdDev. Reconstructed Momentum [MeV/c]')
+plt.title(nice_name)
+fig.tight_layout()
+fig.savefig(plot_file_pre+f'stddev_reco_mom_vs_TS_scale_{file_suffix}.pdf')
+fig.savefig(plot_file_pre+f'stddev_reco_mom_vs_TS_scale_{file_suffix}.png')
+
