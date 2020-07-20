@@ -22,10 +22,17 @@ ddir = '/home/shared_data/'
 # fBnom = ddir+"Bmaps/Mau10/combined/Mau10_1.00xDS_1.00xPS-TS_DSMap.p"
 # fBdis = ddir+"Bmaps/Mau10/combined/Mau10_1.00xDS_{0}xPS-TS_DSMap.p"
 fBnom = ddir+"Bmaps/Mu2e_DSMap_V13.p"
-fBdis = ddir+"Bmaps/Mau13/subtracted/Mau13_1.00xDS_{0}xPS-TS_DSMap.p"
+# fBdis = ddir+"Bmaps/Mau13/subtracted/Mau13_1.00xDS_{0}xPS-TS_DSMap.p" # scale TS
+fBdis = ddir+"Bmaps/Mau13/subtracted/Mau13_{0}xDS_1.00xPS-TS_DSMap.p" # scale DS
+
+# scales for distorted fields
+# scales_coarse = np.linspace(0., 0.9, 10) # first coarse fields, scale TS
+scales_coarse = np.linspace(0.1, 0.9, 9) # first coarse fields, scale DS
+scales_fine = np.concatenate([np.linspace(.91, .99, 9), np.linspace(1.01, 1.10,10)])# new fields
+scales = np.concatenate([scales_coarse, scales_fine])# course fields + new fields
 
 #### Solenoid off
-fields = [f'{n:0.2f}' for n in np.linspace(0.,0.9, 10)] # which fields to analyze
+fields = [f'{n:0.2f}' for n in scales] # which fields to analyze
 B_Mu2e_nom = get_df_interp_func(fBnom, gauss=False)
 B_Mu2e_dis_list = [get_df_interp_func(fBdis.format(field), gauss=False) for field in fields]
 ####
@@ -78,13 +85,18 @@ def run_analysis(name="run_04", outdir="/home/ckampa/data/pickles/distortions/li
     reco_tuples = Parallel(n_jobs=num_cpu)(delayed(analyze_particle_momentum)(num, name=name, outdir=outdir) for num in tqdm(particle_nums, file=sys.stdout, desc='particle #'))
     mom_noms = np.array([i[0] for i in reco_tuples])
     mom_diss = np.array([i[1] for i in reco_tuples])
-    results_dict = {f'mom_dis_{i/10:0.2f}TS': mom_diss[:,i] for i in range(len(B_Mu2e_dis_list))}
+    ###
+    # results_dict = {f'mom_dis_{s:0.2f}TS': mom_diss[:,i] for i,s in enumerate(scales)}
+    results_dict = {f'mom_dis_{s:0.2f}DS': mom_diss[:,i] for i,s in enumerate(scales)}
+    ###
     results_dict['mom_nom'] = mom_noms
     # save to dataframe
     for key, val in results_dict.items():
         df_run.loc[:, key] = val
     # df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau10_TSOff.pkl') # Solenoid Off (Mau10 combination)
-    df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau13_TSOff.pkl') # Solenoid Off (Mau13 subtraction)
+    # df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau13_TSOff.pkl') # TS Solenoid Off (Mau13 subtraction)
+    df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau13_DSOff.pkl') # DS Solenoid Off (Mau13 subtraction)
+    # df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau13_TSOff_TEST.pkl') # Solenoid Off (Mau13 subtraction)
     stop = time.time()
     print("Calculations Complete")
     print(f"Runtime: {stop-start} s, {(stop-start)/60.} min, {(stop-start)/60./60.} hr")

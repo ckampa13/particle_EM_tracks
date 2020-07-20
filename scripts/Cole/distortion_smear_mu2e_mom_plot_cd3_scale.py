@@ -21,11 +21,26 @@ plotdir = '/home/ckampa/data/plots/distortions/linear_gradient/'
 ### Mau13
 nice_name = 'Mau13 Subtracted Maps'
 dist_name = 'Mau13_Subtractions'
-file_suffix = 'Mau13_TSOff'
+# file_suffix = 'Mau13_TSOff'
+file_suffix = 'Mau13_DSOff'
 ###
+if file_suffix == 'Mau13_TSOff':
+    xtitle = 'PS+TS Scale'
+    sol = 'TS'
+else:
+    xtitle = 'DS Scale'
+    sol = 'DS'
 
-scales_dis = np.linspace(0,0.9,10)
-scales = np.linspace(0,1,11)
+
+# scales
+# scales_coarse = np.linspace(0., 0.9, 10) # first coarse fields
+scales_coarse = np.linspace(0.1, 0.8, 8) # scale DS, first coarse fields
+scales_fine = np.concatenate([np.linspace(.91, .99, 9), np.linspace(1.01, 1.10,10)])# new fields
+scales_dis = np.concatenate([scales_coarse, scales_fine])# course fields + new fields
+scales = sorted(np.concatenate([scales_dis, np.array([1.0])]))
+
+# scales_dis = np.linspace(0,0.9,10)
+# scales = np.linspace(0,1,11)
 
 # significance function
 def signal_significance(s, b):
@@ -46,9 +61,9 @@ df_run = pd.read_pickle(datadir+f'run_04/MC_sample_plus_reco_{file_suffix}.pkl')
 
 df_run.loc[:, 'Residual Nominal'] = df_run['mom_nom'] - df_run['p_mc']
 for s in scales_dis:
-    df_run.loc[:, f'Residual Distorted {s:0.2f}xTS'] = df_run[f'mom_dis_{s:0.2f}TS'] - df_run['p_mc']
+    df_run.loc[:, f'Residual Distorted {s:0.2f}x{sol}'] = df_run[f'mom_dis_{s:0.2f}{sol}'] - df_run['p_mc']
 
-plot_file_pre = plotdir+f'run_04/LHelix_reco/{dist_name}/'
+plot_file_pre = plotdir+f'run_04/LHelix_reco/{dist_name}/{sol}_scale/'
 
 # load digitization file
 digit_file = '/home/ckampa/data/root/cd3_ce_and_background_digitized.csv'
@@ -90,11 +105,11 @@ fig.savefig(plot_file_pre+'cd3_ce_dio_plot_original.pdf')
 fig.savefig(plot_file_pre+'cd3_ce_dio_plot_original.png')
 
 
-def make_dist_plot(TS_scale=0.0):
-    scalestr = f'{TS_scale:0.2f}'
+def make_dist_plot(sol_scale=0.0):
+    scalestr = f'{sol_scale:0.2f}'
     # generate errors
-    mom_errs_ce = df_run[f"Residual Distorted {scalestr}xTS"].sample(len(p_ce), replace=True).values
-    mom_errs_dio = df_run[f"Residual Distorted {scalestr}xTS"].sample(len(p_dio), replace=True).values
+    mom_errs_ce = df_run[f"Residual Distorted {scalestr}x{sol}"].sample(len(p_ce), replace=True).values
+    mom_errs_dio = df_run[f"Residual Distorted {scalestr}x{sol}"].sample(len(p_dio), replace=True).values
     p_ce_adj = p_ce + mom_errs_ce
     p_dio_adj = p_dio + mom_errs_dio
     # count number in signal window
@@ -111,12 +126,12 @@ def make_dist_plot(TS_scale=0.0):
     ax2.plot([p_hi_cut, p_hi_cut], [0, 0.45], c='gray', linestyle='--')
     ax2.set_xlabel('Track momentum, MeV/c')
     ax2.set_ylabel('Events per 0.05 MeV/c')
-    ax2.set_title(f'CD3 Era Parameterization\nWith Sampled B Distortion Momentum Errors ({nice_name}: {scalestr}x(PS+TS))')
+    ax2.set_title(f'CD3 Era Parameterization\nWith Sampled B Distortion Momentum Errors ({nice_name}: {scalestr}x({sol}))')
     ax2.set_ylim([0,1.])
     ax2.legend(loc='upper right')
     fig2.tight_layout()
-    fig2.savefig(plot_file_pre+f'cd3_ce_dio_plot_smeared_{scalestr}TS.pdf')
-    fig2.savefig(plot_file_pre+f'cd3_ce_dio_plot_smeared_{scalestr}TS.png')
+    fig2.savefig(plot_file_pre+f'cd3_ce_dio_plot_smeared_{scalestr}{sol}.pdf')
+    fig2.savefig(plot_file_pre+f'cd3_ce_dio_plot_smeared_{scalestr}{sol}.png')
 
 # make distorted plots
 for s in scales_dis:
