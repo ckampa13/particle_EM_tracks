@@ -93,6 +93,8 @@ ax.hist(p_ce, edgecolor='red', bins=bins, weights=1/scale*np.ones_like(p_ce), hi
         +f'Signal Significance: {signal_significance(N_CE_window, N_DIO_window):0.1f}\n')
 ax.hist(p_dio, edgecolor='blue', bins=bins, weights=1/scale*np.ones_like(p_dio), histtype='step', linewidth=2.,
         label=label_temp.format('DIO e-:', np.mean(p_dio), np.std(p_dio), len(p_dio)/scale, N_DIO_window, N_DIO_window_dig))
+ax.scatter(df_dig.mom_DIO, df_dig.N_DIO, marker='+', s=20, color='purple', label='Digitized Backgrounds')
+ax.scatter(df_dig.mom_CE, df_dig.N_CE, marker='*', s=20, color='pink', label='Digitized Signal e-')
 ax.plot([p_low_cut, p_low_cut], [0, 0.45], c='gray', linestyle='--', label=f'Momentum Window:\n[{p_low_cut:.2f}, {p_hi_cut:.2f}] MeV/c\n')
 ax.plot([p_hi_cut, p_hi_cut], [0, 0.45], c='gray', linestyle='--')
 ax.set_xlabel('Track momentum, MeV/c')
@@ -122,6 +124,10 @@ def make_dist_plot(sol_scale=0.0):
              +f'Signal Significance: {signal_significance(N_CE_window_adj, N_DIO_window_adj):0.1f}\n')
     ax2.hist(p_dio_adj, edgecolor='blue', bins=bins, weights=1/scale*np.ones_like(p_dio_adj), histtype='step', linewidth=2.,
             label=label_temp.format('DIO e-:', np.mean(p_dio_adj), np.std(p_dio_adj), len(p_dio_adj)/scale, N_DIO_window_adj, N_DIO_window_dig))
+    # digitized results
+    ax2.scatter(df_dig.mom_DIO, df_dig.N_DIO, marker='+', s=20, color='purple', label='Digitized Backgrounds')
+    ax2.scatter(df_dig.mom_CE, df_dig.N_CE, marker='*', s=20, color='pink', label='Digitized Signal e-')
+    # cuts
     ax2.plot([p_low_cut, p_low_cut], [0, 0.45], c='gray', linestyle='--', label=f'Momentum Window:\n[{p_low_cut:.2f}, {p_hi_cut:.2f}] MeV/c\n')
     ax2.plot([p_hi_cut, p_hi_cut], [0, 0.45], c='gray', linestyle='--')
     ax2.set_xlabel('Track momentum, MeV/c')

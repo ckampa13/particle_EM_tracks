@@ -23,18 +23,22 @@ ddir = '/home/shared_data/'
 # fBdis = ddir+"Bmaps/Mau10/combined/Mau10_1.00xDS_{0}xPS-TS_DSMap.p"
 fBnom = ddir+"Bmaps/Mu2e_DSMap_V13.p"
 # fBdis = ddir+"Bmaps/Mau13/subtracted/Mau13_1.00xDS_{0}xPS-TS_DSMap.p" # scale TS
-fBdis = ddir+"Bmaps/Mau13/subtracted/Mau13_{0}xDS_1.00xPS-TS_DSMap.p" # scale DS
+fBdis = ddir+"Bmaps/Mau13/subtracted/Mau13_{0}xDS_{1}xPS-TS_DSMap.p" # scale DS
 
 # scales for distorted fields
 # scales_coarse = np.linspace(0., 0.9, 10) # first coarse fields, scale TS
 scales_coarse = np.linspace(0.1, 0.9, 9) # first coarse fields, scale DS
 scales_fine = np.concatenate([np.linspace(.91, .99, 9), np.linspace(1.01, 1.10,10)])# new fields
-scales = np.concatenate([scales_coarse, scales_fine])# course fields + new fields
+scales_finer = np.linspace(.995, 1.005, 11)
+scales = np.concatenate([scales_coarse, scales_fine, scales_finer])# course fields + new fields
+scales_str = [f'{scale:.2f}' if int(round(scale*1000 % 10)) == 0 else f'{scale:.3f}' for scale in scales]
 
 #### Solenoid off
-fields = [f'{n:0.2f}' for n in scales] # which fields to analyze
+# fields = [f'{n:0.2f}' for n in scales] # which fields to analyze
+fields = scales_str
+TSs = ['1.00' if int(round(scale*1000 % 10)) == 0 else '1.000' for scale in scales]
 B_Mu2e_nom = get_df_interp_func(fBnom, gauss=False)
-B_Mu2e_dis_list = [get_df_interp_func(fBdis.format(field), gauss=False) for field in fields]
+B_Mu2e_dis_list = [get_df_interp_func(fBdis.format(field, TS), gauss=False) for field, TS in zip(fields, TSs)]
 ####
 
 #### Linear Gradient
@@ -87,7 +91,8 @@ def run_analysis(name="run_04", outdir="/home/ckampa/data/pickles/distortions/li
     mom_diss = np.array([i[1] for i in reco_tuples])
     ###
     # results_dict = {f'mom_dis_{s:0.2f}TS': mom_diss[:,i] for i,s in enumerate(scales)}
-    results_dict = {f'mom_dis_{s:0.2f}DS': mom_diss[:,i] for i,s in enumerate(scales)}
+    # results_dict = {f'mom_dis_{s:0.2f}DS': mom_diss[:,i] for i,s in enumerate(scales)}
+    results_dict = {f'mom_dis_{s}DS': mom_diss[:,i] for i,s in enumerate(scales_str)}
     ###
     results_dict['mom_nom'] = mom_noms
     # save to dataframe
@@ -96,6 +101,7 @@ def run_analysis(name="run_04", outdir="/home/ckampa/data/pickles/distortions/li
     # df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau10_TSOff.pkl') # Solenoid Off (Mau10 combination)
     # df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau13_TSOff.pkl') # TS Solenoid Off (Mau13 subtraction)
     df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau13_DSOff.pkl') # DS Solenoid Off (Mau13 subtraction)
+    # df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau13_DSOff_TEST.pkl') # Solenoid Off (Mau13 subtraction)
     # df_run.to_pickle(outdir+'MC_sample_plus_reco_Mau13_TSOff_TEST.pkl') # Solenoid Off (Mau13 subtraction)
     stop = time.time()
     print("Calculations Complete")
