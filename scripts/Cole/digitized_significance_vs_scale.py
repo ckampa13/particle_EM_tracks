@@ -45,6 +45,7 @@ def signal_significance(s, b):
     S = (2*((s+b)*np.log(1+s/b)-s))**(1/2)
     return S
 
+Rmue = 2e-16
 p_low_cut = 103.85
 p_hi_cut = 104.90
 window_width = p_hi_cut - p_low_cut
@@ -85,24 +86,37 @@ def sig_vs_window(p_lo=p_low_cut, p_hi=p_hi_cut):
     N_DIO_window = N_DIO_dig[mask_DIO][1:-1].sum() + N0_DIO + Nf_DIO
     N_CE_window = N_CE_dig[mask_CE][1:-1].sum() + N0_CE + Nf_CE
     sig = signal_significance(N_CE_window, N_DIO_window)
-    return sig
+    return sig, N_CE_window, N_DIO_window
 
+# Mu2eCCFCNoNtuples grid
+p_lows = np.linspace(103.5, 104.,51)
+p_his = np.linspace(104.75, 105.5, 76)
 # coarse grid
 # p_lows = np.linspace(103.3, 105.5, 23)
 # p_his = np.linspace(103.3, 105.5, 23)
 # fine grid
-p_lows = np.linspace(103.7, 103.9, 201)
-p_his = np.linspace(104.85, 105.1, 251)
+# p_lows = np.linspace(103.7, 103.9, 201)
+# p_his = np.linspace(104.85, 105.1, 251)
 PL, PH = np.meshgrid(p_lows, p_his)
 PL_ = PL.flatten()
 PH_ = PH.flatten()
 sigs = []
+N_CEs = []
+N_DIOs = []
 for pl, ph in zip(PL_,PH_):
     if pl>=ph:
         sigs.append(0)
+        N_CEs.append(0)
+        N_DIOs.append(0)
     else:
-        sigs.append(sig_vs_window(pl,ph))
+        s, c, d = sig_vs_window(pl,ph)
+        sigs.append(s)
+        N_CEs.append(c)
+        N_DIOs.append(d)
+        # sigs.append(sig_vs_window(pl,ph))
 sigs = np.array(sigs)
+N_CEs = np.array(N_CEs)
+N_DIOs = np.array(N_DIOs)
 
 sig_opt = sigs.max()
 pl_opt = PL_[sigs.argmax()]
@@ -110,19 +124,77 @@ ph_opt = PH_[sigs.argmax()]
 
 # SIGS = sigs.reshape(len(p_lows), len(p_his))
 SIGS = sigs.reshape(len(p_his), len(p_lows))
+CES = N_CEs.reshape(len(p_his), len(p_lows))
+SESS = Rmue / CES
+DIOS = N_DIOs.reshape(len(p_his), len(p_lows))
 
 # plot!
 fig = plt.figure()
-c = plt.contourf(PL, PH, SIGS, 15)
+ax = fig.add_subplot(111)
+c = ax.pcolormesh(PL, PH, SIGS, cmap='gist_rainbow_r')
 cb = fig.colorbar(c)
 cb.ax.set_ylabel('Signal Significance')
 # grid results
-plt.plot([pl_opt, pl_opt],[p_his.min(), p_his.max()], 'r--', label=f'Grid Max Significance:\n'+r'$p_{\mathrm{low}}=$'+f'{pl_opt:0.3f} MeV/c, '+r'$p_{\mathrm{high}}=$'+f'{ph_opt:0.3f} MeV/c')
-plt.plot([p_lows.min(), p_lows.max()],[ph_opt, ph_opt], 'r--')
+ax.plot([pl_opt, pl_opt],[p_his.min(), p_his.max()], '--', c='gray', label=f'Grid Max Significance:\n'+r'$p_{min}=$'+f'{pl_opt:0.3f} MeV/c, '+r'$p_{max}=$'+f'{ph_opt:0.3f} MeV/c')
+ax.plot([p_lows.min(), p_lows.max()],[ph_opt, ph_opt], '--', c='gray')
 # nominal results
-plt.plot([p_low_cut, p_low_cut],[p_his.min(), p_his.max()], 'k-.', label=f'Nominal Window:\n'+r'$p_{\mathrm{low}}=$'+f'{p_low_cut:0.3f} MeV/c, '+r'$p_{\mathrm{high}}=$'+f'{p_hi_cut:0.3f} MeV/c')
-plt.plot([p_lows.min(), p_lows.max()],[p_hi_cut, p_hi_cut], 'k-.')
+ax.plot([p_low_cut, p_low_cut],[p_his.min(), p_his.max()], 'k-.', label=f'Nominal Window:\n'+r'$p_{min}=$'+f'{p_low_cut:0.3f} MeV/c, '+r'$p_{max}=$'+f'{p_hi_cut:0.3f} MeV/c')
+ax.plot([p_lows.min(), p_lows.max()],[p_hi_cut, p_hi_cut], 'k-.')
+ax.set_aspect('equal')
+
+ax.set_xlabel(r'$p_{min}$')
+ax.set_ylabel(r'$p_{max}$')
+ax.set_xticks([103.5, 103.745, 103.99])
+ax.set_yticks([104.75, 105, 105.25])
 
 plt.legend()
 fig.savefig(plot_file_pre+'significance_grid.pdf')
 fig.savefig(plot_file_pre+'significance_grid.png')
+
+# N_background
+fig = plt.figure()
+ax = fig.add_subplot(111)
+# c = plt.contourf(PL, PH, DIOS, np.linspace(0.3, 1.2, 7))
+# c = plt.pcolormesh(PL, PH, DIOS, cmap='gist_rainbow_r')
+c = ax.pcolormesh(PL, PH, np.clip(DIOS,a_min=0.3,a_max=None), cmap='gist_rainbow_r', zorder=45)
+cb = fig.colorbar(c)
+cb.ax.set_ylabel('N background')
+ax.set_aspect('equal')
+ax.set_xlabel(r'$p_{min}$')
+ax.set_ylabel(r'$p_{max}$')
+ax.set_xticks([103.5, 103.745, 103.99])
+ax.set_yticks([104.75, 105, 105.25])
+# ax.set_axisbelow(False)
+# ax.grid(zorder=50)
+fig.savefig(plot_file_pre+'N_BG_grid.pdf')
+fig.savefig(plot_file_pre+'N_BG_grid.png')
+
+# N_SES
+fig = plt.figure()
+ax = fig.add_subplot(111)
+# c = plt.contourf(PL, PH, DIOS, np.linspace(0.3, 1.2, 7))
+c = ax.pcolormesh(PL, PH, SESS, cmap='gist_rainbow_r')
+# c = ax.pcolormesh(PL, PH, np.clip(DIOS,a_min=0.3,a_max=None), cmap='gist_rainbow_r', zorder=45)
+cb = fig.colorbar(c)
+cb.ax.set_ylabel('SES')
+ax.set_aspect('equal')
+ax.set_xlabel(r'$p_{min}$')
+ax.set_ylabel(r'$p_{max}$')
+ax.set_xticks([103.5, 103.745, 103.99])
+ax.set_yticks([104.75, 105, 105.25])
+# ax.set_axisbelow(False)
+# ax.grid(zorder=50)
+fig.savefig(plot_file_pre+'SES_grid.pdf')
+fig.savefig(plot_file_pre+'SES_grid.png')
+
+# N_signal
+fig = plt.figure()
+# c = plt.contourf(PL, PH, CES, 7)
+c = plt.contourf(PL, PH, CES, 7)
+cb = fig.colorbar(c)
+cb.ax.set_ylabel('N signal')
+ax.set_xlabel(r'$p_{min}$')
+ax.set_ylabel(r'$p_{max}$')
+fig.savefig(plot_file_pre+'N_CE_grid.pdf')
+fig.savefig(plot_file_pre+'N_CE_grid.png')
+
