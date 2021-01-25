@@ -181,8 +181,8 @@ ax2 = ax1.twinx()
 
 color = 'tab:red'
 ax2.set_ylabel('Signal Significance', color=color)
-if file_suffix == 'Mau13_DSOff':
-    ax2.plot(scales_dig, sig_digs, '-', c=color, linewidth=1, label='Significance (digitized CD3 Plot)')
+# if file_suffix == 'Mau13_DSOff':
+#     ax2.plot(scales_dig, sig_digs, '-', c=color, linewidth=1, label='Significance (digitized CD3 Plot)')
 ax2.scatter(scales, sigs, c=color, marker='s', s=25, label='Significance')
 ax2.tick_params(axis='y', labelcolor=color)
 # ax2.legend()

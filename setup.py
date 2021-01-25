@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="emtracks-ckampa13",
-    version="0.0.3",
+    name="emtracks",
+    version="0.0.0",
     author="Cole Kampa",
     author_email="ckampa13@gmail.com",
     description="Particle in EM fields track calculator",

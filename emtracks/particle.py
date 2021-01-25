@@ -245,8 +245,9 @@ class trajectory_solver(object):
         fig.canvas.mpl_connect('draw_event', on_draw)
         return fig, ax
 
-    def plot2d(self):
-        fig, axs = plt.subplots(3, 3)
+    def plot2d(self, fig=None, axs=None):
+        if fig is None:
+            fig, axs = plt.subplots(3, 3)
         axs[0, 0].plot(self.dataframe.t, self.dataframe.x, 'bo-', markersize=2)
         axs[0, 0].set(xlabel="t [s]", ylabel="x [m]")
         axs[0, 1].plot(self.dataframe.t, self.dataframe.vx, 'bo-', markersize=2)

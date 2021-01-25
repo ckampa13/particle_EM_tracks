@@ -28,8 +28,8 @@ for d in [plotdir, plotdir+'run_04/', plotdir+'run_04/LHelix_reco/']:
 ### Mau13
 nice_name = 'Mau13 Subtracted Maps'
 dist_name = 'Mau13_Subtractions'
-# file_suffix = 'Mau13_TSOff'
-file_suffix = 'Mau13_DSOff'
+file_suffix = 'Mau13_TSOff'
+# file_suffix = 'Mau13_DSOff'
 ###
 if file_suffix == 'Mau13_TSOff':
     xtitle = 'PS+TS Scale'
@@ -39,22 +39,22 @@ else:
     sol = 'DS'
 
 # scales
-# scales_coarse = np.linspace(0., 0.8, 9) # scale TS, first coarse fields
-scales_coarse = np.linspace(0.1, 0.8, 8) # scale DS, first coarse fields
+scales_coarse = np.linspace(0., 0.8, 9) # scale TS, first coarse fields
+# scales_coarse = np.linspace(0.1, 0.8, 8) # scale DS, first coarse fields
 scales_fine = np.concatenate([np.linspace(.9, .99, 10), np.linspace(1.01, 1.10,10)])# new fields
 scales_fine_str = [f'{scale:.2f}' if int(round(scale*1000 % 10)) == 0 else f'{scale:.3f}' for scale in scales_fine]
 # scales_finer = np.linspace(.995, 1.005, 11)
 scales_finer = np.concatenate([np.linspace(.995, .999, 5), np.linspace(1.001, 1.005,5)])# new fields
 scales_finer_str = [f'{scale:.2f}' if int(round(scale*1000 % 10)) == 0 else f'{scale:.3f}' for scale in scales_finer]
-# scales_dis = np.concatenate([scales_coarse, scales_fine])# course fields + new fields
-scales_dis = np.concatenate([scales_coarse, scales_fine, scales_finer])# course fields + new fields
+scales_dis = np.concatenate([scales_coarse, scales_fine])# course fields + new fields
+# scales_dis = np.concatenate([scales_coarse, scales_fine, scales_finer])# course fields + new fields
 scales_dis_str = [f'{scale:.2f}' if int(round(scale*1000 % 10)) == 0 else f'{scale:.3f}' for scale in scales_dis]
 scales = np.concatenate([scales_dis, np.array([1.0])])
 scales_ticks = np.linspace(0, 1.1, 12)
-# scales_new = np.concatenate([scales_fine, np.array([1.0])])
-# scales_new_ticks = np.linspace(0.9, 1.1, 21)
-scales_new = np.concatenate([scales_finer, np.array([1.0])])
-scales_new_ticks = np.linspace(0.995, 1.005, 11)
+scales_new = np.concatenate([scales_fine, np.array([1.0])])
+scales_new_ticks = np.linspace(0.9, 1.1, 21)
+# scales_new = np.concatenate([scales_finer, np.array([1.0])])
+# scales_new_ticks = np.linspace(0.995, 1.005, 11)
 
 # scales_dis = np.linspace(0,0.9,10)
 # scales = np.linspace(0,1,11)

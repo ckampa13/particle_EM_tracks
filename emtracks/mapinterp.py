@@ -5,7 +5,7 @@ import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 
 
-def get_df_interp_func(filename=None, df=None, gauss=True, mm=False, scipy_interp=False, bounds=None):
+def get_df_interp_func(filename=None, df=None, gauss=True, mm=False, scipy_interp=False, bounds=None, Blabels=['Bx','By','Bz']):
     '''
     This factory function will return an interpolating function for any field map. An input x,y,z will output the corresponding Bx,By,Bz or Br,Bphi,Bz. Will decide later if linear interpolation is good enough.
 
@@ -19,10 +19,12 @@ def get_df_interp_func(filename=None, df=None, gauss=True, mm=False, scipy_inter
             df = pd.read_csv(filename)
     else:
         df = df.copy()
+    # labels
+    Bx_l, By_l, Bz_l = Blabels
     if not gauss:
-        df["Bx"] = df["Bx"] / 1e4
-        df["By"] = df["By"] / 1e4
-        df["Bz"] = df["Bz"] / 1e4
+        df[Bx_l] = df[Bx_l] / 1e4
+        df[By_l] = df[By_l] / 1e4
+        df[Bz_l] = df[Bz_l] / 1e4
     if mm:
         df["X"] = df["X"] * 1e3
         df["Y"] = df["Y"] * 1e3
@@ -54,7 +56,7 @@ def get_df_interp_func(filename=None, df=None, gauss=True, mm=False, scipy_inter
     ly = len(ys)
     lz = len(zs)
 
-    df_np = df[["X","Y","Z","Bx","By","Bz"]].values
+    df_np = df[["X","Y","Z",Bx_l,By_l,Bz_l]].values
 
     x, y, z, bx, by, bz = df_np.T
     BX = bx.reshape(lx, ly, lz)
