@@ -11,15 +11,33 @@ ddir = "/home/ckampa/data/"
 pkldir = ddir + 'pickles/emtracks/pion_degrader_tandip/'
 # plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run03/'
 # plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run04/'
-plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run05/'
+# plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run05/'
+# plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run06/'
+# plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run07/'
+# plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run08/'
+# plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run09/'
+# plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run10/'
+plotdir = ddir + 'plots/emtracks/pion_degrader_tandip/70perc/run11/'
 # filenames
 # pklfile = pkldir+'degrader_tandip_df_run02.pkl'
 # pklfile = pkldir+'degrader_tandip_df_run03.pkl'
 # pklfile = pkldir+'degrader_tandip_df_run04.pkl'
-pklfile = pkldir+'degrader_tandip_df_run05.pkl'
+# pklfile = pkldir+'degrader_tandip_df_run05.pkl'
+# pklfile = pkldir+'degrader_tandip_df_run06.pkl'
+# pklfile = pkldir+'degrader_tandip_df_run07.pkl'
+# pklfile = pkldir+'degrader_tandip_df_run08.pkl'
+# pklfile = pkldir+'degrader_tandip_df_run09.pkl'
+# pklfile = pkldir+'degrader_tandip_df_run10.pkl'
+pklfile = pkldir+'degrader_tandip_df_run11.pkl'
 # pklfile_new = pkldir+'degrader_tandip_df_run03_plots.pkl'
 # pklfile_new = pkldir+'degrader_tandip_df_run04_plots.pkl'
-pklfile_new = pkldir+'degrader_tandip_df_run05_plots.pkl'
+# pklfile_new = pkldir+'degrader_tandip_df_run05_plots.pkl'
+# pklfile_new = pkldir+'degrader_tandip_df_run06_plots.pkl'
+# pklfile_new = pkldir+'degrader_tandip_df_run07_plots.pkl'
+# pklfile_new = pkldir+'degrader_tandip_df_run08_plots.pkl'
+# pklfile_new = pkldir+'degrader_tandip_df_run09_plots.pkl'
+# pklfile_new = pkldir+'degrader_tandip_df_run10_plots.pkl'
+pklfile_new = pkldir+'degrader_tandip_df_run11_plots.pkl'
 
 # tracker cut
 Rmin = 0. # 0.3769 # m
@@ -45,13 +63,20 @@ df.eval(f'scaled_p0phi_r = p0phi/pT + r', inplace=True) # fix
 df.eval('p0r = px*cos(phi)+py*sin(phi)', inplace=True)
 # bins_r = np.linspace(0, 0.175, 176)
 # n, bins = np.histogram(df['r'].values, bins=bins_r)
-df.loc[df.tand_Mau9_70 < 0, 'tand_Mau9_70'] = -1
-# df = df[df['tand_Mau9_70'] >= 0].copy()
+# df.loc[df.tand_Mau9_70 < 0, 'tand_Mau9_70'] = -1
+df = df[df['tand_Mau9_70'] >= 0].copy()
 N_gen = len(df)
 
 
 # save pickle with new columns
 df.to_pickle(pklfile_new)
+
+# hard coded peak locations
+q1 = '(tand_Mau9_70 < 1.27)'
+q2 = '(tand_Mau9_70 >= 1.27) & (tand_Mau9_70 < 1.56)'
+f = '(tand0_Mau9_70 > 0)'
+b = '(tand0_Mau9_70 < 0)'
+
 
 # a few functions to keep code DRY
 # def get_data(df, var, query=None, Rmin=Rmin):
@@ -111,7 +136,7 @@ def make_plot_hist(df, name='Mau9 70%', var='tand_Mau9_70', xl=r'$\tan(\mathrm{d
     fig.savefig(plotdir+f'{var}_{queryn}_degrader_hist.pdf')
     fig.savefig(plotdir+f'{var}_{queryn}_degrader_hist.png')
 
-def make_plot_scatter(df, name='Mau9 70%', x='tand0_Mau9_70', y='tand_Mau9_70', xl=r'$\tan(\mathrm{dip})$ (positron birth)', yl=r'$\tan(\mathrm{dip})$ (Tracker start)', query='(tand0_Mau9_70 > 0)', queryn='forward', legendloc='upper left'):
+def make_plot_scatter(df, name='Mau9 70%', x='tand0_Mau9_70', y='tand_Mau9_70', xl=r'$\tan(\mathrm{dip})$ (positron birth)', yl=r'$\tan(\mathrm{dip})$ (Tracker start)', query=f, queryn='forward', legendloc='upper left'):
     data_x = get_data(df, x, query)
     data_y= get_data(df, y, query)
     fig = plt.figure()
@@ -136,9 +161,9 @@ if __name__=='__main__':
     vars_ = ['tand_Mau9_70', 'tand_Mau9_70', 'tand_Mau9_70', 'r', 'r', 'r', 'r', 'r', 'r',
              'p0phi', 'p0phi','p0phi', 'scaled_p0phi_r', 'scaled_p0phi_r', 'scaled_p0phi_r']
     # queries = [None, None, '(tand_Mau9_70 > 0.91) & (tand_Mau9_70 < 1.08)', '(tand_Mau9_70 > 1.08) & (tand_Mau9_70 < 1.21)']
-    queries = [None, '(tand0_Mau9_70 < 0)', '(tand0_Mau9_70 > 0)', None, '(tand_Mau9_70 < 1.08)', '(tand_Mau9_70 > 1.08) & (tand_Mau9_70 < 1.21)', '(tand0_Mau9_70 > 0)', '(tand0_Mau9_70 > 0) & (tand_Mau9_70 < 1.08)', '(tand0_Mau9_70 > 0) & (tand_Mau9_70 > 1.08) & (tand_Mau9_70 < 1.21)',
-                '(tand0_Mau9_70 > 0)', '(tand0_Mau9_70 > 0) & (tand_Mau9_70 < 1.08)', '(tand0_Mau9_70 > 0) & (tand_Mau9_70 > 1.08) & (tand_Mau9_70 < 1.21)',
-               '(tand0_Mau9_70 > 0)', '(tand0_Mau9_70 > 0) & (tand_Mau9_70 < 1.08)', '(tand0_Mau9_70 > 0) & (tand_Mau9_70 > 1.08) & (tand_Mau9_70 < 1.21)',]
+    queries = [None, b, f, None, q1, q2, f, f+'&'+q1, f+'&'+q2,
+               f, f+'&'+q1, f+'&'+q2,
+               f, f+'&'+q1, f+'&'+q2]
     queriens = ['full', 'backwards', 'forward', 'full', 'peak1', 'peak2', 'forward_full','forward_peak1','forward_peak2',
                 'forward_full','forward_peak1','forward_peak2',
                 'forward_full','forward_peak1','forward_peak2',]
@@ -153,7 +178,8 @@ if __name__=='__main__':
     # bins_r = np.linspace(0, 0.175, int(176/2))
     bins_pp = np.linspace(-70, 70, 70)
     # bins_pp = np.linspace(-69, 69, 139)
-    bins_scaled = np.linspace(-1, 1, 101)
+    # bins_scaled = np.linspace(-1, 1, 101)
+    bins_scaled = np.linspace(-2, 2, 101)
     binss = [bins_tan, bins_tan, bins_tan, bins_r, bins_r, bins_r, bins_r, bins_r, bins_r,
              bins_pp, bins_pp, bins_pp, bins_scaled, bins_scaled, bins_scaled]
     llocs = ['upper right',  'upper right', 'upper right', 'upper left', 'upper left', 'upper left', 'upper left', 'upper right', 'upper right',
@@ -167,10 +193,13 @@ if __name__=='__main__':
     # scatter plots
     make_plot_scatter(df, query='(tand0_Mau9_70 > -1.3) & (tand_Mau9_70 < 2.)', queryn='all')
     make_plot_scatter(df)
-    make_plot_scatter(df, query='(tand0_Mau9_70 > 0) & (tand_Mau9_70 < 2.0)', queryn='full')
-    make_plot_scatter(df, query='(tand0_Mau9_70 > 0) & (tand_Mau9_70 < 2.0)', queryn='forward-tracker')
-    make_plot_scatter(df, query='(tand0_Mau9_70 > 0) & (tand_Mau9_70 < 1.21) & (tand_Mau9_70 > 1.08)', queryn='peak2')
-    make_plot_scatter(df, query='(tand0_Mau9_70 > 0) & (tand_Mau9_70 < 1.21) & (tand_Mau9_70 > 1.08)', queryn='peak2', x='p0phi', xl=r'$p_{0 \phi}$ (positron birth)')
+    make_plot_scatter(df, query=f+'& (tand_Mau9_70 < 2.0)', queryn='full')
+    # make_plot_scatter(df, query='(tand0_Mau9_70 > 0) & (tand_Mau9_70 < 2.0)', queryn='forward-tracker')
+    make_plot_scatter(df, query=f+'&'+q1, queryn='peak1')
+    make_plot_scatter(df, query=f+'&'+q2, queryn='peak2')
+    make_plot_scatter(df, query=f+'&'+q2, queryn='peak2', x='p0phi', xl=r'$p_{0 \phi}$ (positron birth)')
+    make_plot_scatter(df, query='(tand0_Mau9_70 > -1.3) & (tand_Mau9_70 < 2.)', queryn='full', x='theta', xl=r'$p_{\theta}$ (positron birth)')
+    make_plot_scatter(df, query='(tand0_Mau9_70 > -10) & (tand0_Mau9_70 < 10) & (tand_Mau9_70 < 10.)', queryn='full2',)# x='theta', xl=r'$p_{\theta}$ (positron birth)')
 
     # fig,ax
 
